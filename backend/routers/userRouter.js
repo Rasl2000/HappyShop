@@ -130,7 +130,7 @@ userRouter.put(
       user.email = req.body.email || user.email;
       user.isSeller =
         req.body.isSeller === user.isSeller ? user.isSeller : req.body.isSeller;
-      user.isAdmin = req.body.isAdmin || user.isAdmin;
+      user.isAdmin = req.body.isAdmin || user.isAdmin;//Aplicar logica de vendedor?
       const updatedUser = await user.save();
       res.send({ message: 'Usuario Actualizado', user: updatedUser });
     } else {
