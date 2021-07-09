@@ -2,6 +2,7 @@ import express from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import data from '../data.js';
 import Product from '../models/productModel.js';
+import User from '../models/userModel.js';
 import { isAdmin, isAuth, isSellerOrAdmin } from '../utils.js';
 
 const productRouter = express.Router();
@@ -9,6 +10,8 @@ const productRouter = express.Router();
 productRouter.get(
     '/',
     expressAsyncHandler(async (req, res) => {
+      const pageSize = 10;
+      const page = Number(req.query.pageNumber) || 1;
       const name = req.query.name || '';
       const category = req.query.category || '';
       const seller = req.query.seller || '';
@@ -35,6 +38,13 @@ productRouter.get(
           ? { rating: -1 }
           : { _id: -1 };
 
+      const count = await Product.count({
+        ...sellerFilter,
+        ...nameFilter,
+        ...categoryFilter,
+        ...priceFilter,
+        ...ratingFilter,
+      });
       const products = await Product.find({
         ...sellerFilter,
         ...nameFilter,
@@ -43,8 +53,10 @@ productRouter.get(
         ...ratingFilter,
       })
         .populate('seller', 'seller.name seller.logo')
-        .sort(sortOrder);
-      res.send(products);
+        .sort(sortOrder)
+        .skip(pageSize * (page - 1))
+        .limit(pageSize);
+        res.send({ products, page, pages: Math.ceil(count / pageSize) });
     })
   );
 
@@ -60,8 +72,19 @@ productRouter.get(
   '/seed',
   expressAsyncHandler(async (req, res) => {
     // await Product.remove({});
-    const createdProducts = await Product.insertMany(data.products);
-    res.send({ createdProducts });
+    const seller = await User.findOne({ isSeller: true });
+    if (seller) {
+      const products = data.products.map((product) => ({
+        ...product,
+        seller: seller._id,
+      }));
+      const createdProducts = await Product.insertMany(products);
+      res.send({ createdProducts });
+    } else {
+      res
+        .status(500)
+        .send({ message: 'No se encontro vendedor usa: /api/users/seed' });
+    }
   })
 );
 
