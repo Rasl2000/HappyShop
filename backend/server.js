@@ -1,5 +1,5 @@
 import http from 'http';
-import { Server } from 'socket.io';
+import socketIo from 'socket.io';
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -51,7 +51,7 @@ const port = process.env.PORT || 5000;
 
 
 const httpServer = http.Server(app);
-const io = new Server(httpServer, { cors: { origin: '*' } });
+const io = new socketIo(httpServer, { cors: { origin: '*' } });
 const users = [];
 
 io.on('connection', (socket) => {
@@ -115,7 +115,7 @@ io.on('connection', (socket) => {
       } else {
         io.to(socket.id).emit('message', {
           name: 'Admin',
-          body: 'Sorry. I am not online right now',
+          body: 'Lo siento no estoy disponible en este momento contacte este numero ...',
         });
       }
     }
